@@ -1,0 +1,870 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MF Intelligence | Mutual Fund Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root {
+    --green:#087443;
+    --dark:#075b35;
+    --light:#e6f5eb;
+    --bg:#f4f8f5;
+    --text:#183b2b;
+    --muted:#82958a;
+    --border:#e1eee5;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:var(--bg);color:var(--text)}
+.container{display:flex;min-height:100vh}
+.sidebar{
+    width:250px;background:white;padding:25px 20px;
+    border-right:1px solid var(--border);position:fixed;
+    height:100vh;overflow-y:auto;z-index:5
+}
+.logo{font-size:24px;font-weight:800;color:var(--green);margin-bottom:6px}
+.logo-sub{font-size:12px;color:var(--muted);margin-bottom:32px}
+.nav-title{font-size:11px;color:#91a399;font-weight:700;
+    margin:24px 0 12px;letter-spacing:1px}
+.nav-item{padding:12px;margin:5px 0;border-radius:9px;
+    color:#52675a;cursor:pointer;transition:.2s}
+.nav-item:hover,.nav-item.active{background:var(--light);
+    color:var(--green);font-weight:700}
+.developer-box{background:#edf8f0;padding:12px;border-radius:12px}
+.developer{padding:12px 4px;border-bottom:1px solid #d5eadb}
+.developer:last-child{border:0}
+.developer strong{display:block;color:var(--green);font-size:13px}
+.developer small{color:var(--muted);font-size:11px}
+.main{margin-left:250px;padding:30px;width:calc(100% - 250px)}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}
+.topbar h2{color:#174b32}
+.status{background:#e1f5e7;color:var(--green);padding:9px 15px;
+    border-radius:30px;font-size:12px;font-weight:600}
+.page{display:none}
+.page.active{display:block}
+.hero{background:linear-gradient(120deg,#dff3e5,#f7fff9);
+    border-radius:20px;padding:35px;display:flex;align-items:center;
+    justify-content:space-between;gap:25px;margin-bottom:28px}
+.hero-content{max-width:570px}
+.hero h1{font-size:34px;color:var(--dark);margin-bottom:14px}
+.hero p{color:#607a69;line-height:1.7}
+.hero img{width:280px;max-width:40%;border-radius:16px;object-fit:cover}
+.btn{background:var(--green);color:white;padding:11px 18px;
+    border:0;border-radius:8px;cursor:pointer;font-weight:600}
+.btn:hover{background:var(--dark)}
+.section-title{font-size:21px;margin:25px 0 16px;color:#174b32}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card,.panel,.chart-box{background:white;padding:21px;border-radius:15px;
+    border:1px solid var(--border);box-shadow:0 4px 15px #14502d08}
+.card-label{color:var(--muted);font-size:13px}
+.card h2{color:var(--green);font-size:28px;margin:10px 0 4px}
+.card small{color:var(--muted)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.chart-box h3{font-size:16px;color:#24543a;margin-bottom:18px}
+.chart-box canvas{max-height:280px}
+.insight{background:white;padding:17px;border-left:4px solid #15965b;
+    border-radius:9px;margin:12px 0;color:#52675a;line-height:1.6}
+.toolbar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;
+    gap:12px;margin:18px 0}
+input,select{width:100%;padding:11px 12px;border:1px solid #dce9df;
+    border-radius:8px;background:white;color:var(--text);outline:none}
+input:focus,select:focus{border-color:var(--green)}
+.table-wrap{overflow-x:auto;background:white;border-radius:12px;
+    border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{padding:13px 14px;text-align:left;border-bottom:1px solid #edf2ee;
+    font-size:13px;white-space:nowrap}
+th{background:#e6f5eb;color:var(--green);font-weight:700}
+tr:hover td{background:#f8fcf9}
+.pagination{display:flex;justify-content:space-between;align-items:center;
+    margin-top:15px;gap:10px;flex-wrap:wrap}
+.pagination button{padding:9px 15px;border:1px solid var(--border);
+    background:white;color:var(--green);border-radius:7px;cursor:pointer}
+.pagination button:disabled{opacity:.4;cursor:not-allowed}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px}
+.field{margin-bottom:5px}
+.result{padding:20px;background:#edf8f0;border-radius:12px;margin-top:18px;
+    display:none;line-height:1.8}
+.muted{color:var(--muted);font-size:13px}
+.error{color:#b42318;background:#fff0ee;padding:12px;border-radius:8px;margin:12px 0}
+.loading{color:var(--green);padding:15px}
+@media(max-width:1050px){
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .toolbar{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:700px){
+    .sidebar{width:190px;padding:18px 12px}
+    .main{margin-left:190px;width:calc(100% - 190px);padding:15px}
+    .hero{flex-direction:column;align-items:flex-start}
+    .hero img{max-width:100%;width:100%}
+    .hero h1{font-size:25px}
+    .cards,.chart-grid,.toolbar,.form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<aside class="sidebar">
+    <div class="logo">🌿 MF Intelligence</div>
+    <div class="logo-sub">Mutual Fund Analytics</div>
+
+    <div class="nav-title">NAVIGATION</div>
+    <div class="nav-item active" onclick="showPage('overview',this)">🏠 Overview</div>
+    <div class="nav-item" onclick="showPage('explorer',this)">📊 Fund Explorer</div>
+    <div class="nav-item" onclick="showPage('returns',this)">📈 Returns Analysis</div>
+    <div class="nav-item" onclick="showPage('risk',this)">🛡️ Risk Analysis</div>
+    <div class="nav-item" onclick="showPage('prediction',this)">🤖 ML Prediction</div>
+    <div class="nav-item" onclick="showPage('about',this)">ℹ️ About Project</div>
+
+    <div class="nav-title">DEVELOPED BY</div>
+    <div class="developer-box">
+        <div class="developer">
+            <strong>👩‍💻 Srishti Goyal</strong>
+            <small>B.Tech CSE (AIML)</small>
+        </div>
+        <div class="developer">
+            <strong>👩‍💻 Sonika Gupta</strong>
+            <small>B.Tech CSE (AIML)</small>
+        </div>
+    </div>
+</aside>
+
+<main class="main">
+<div class="topbar">
+    <h2>Mutual Fund Dashboard</h2>
+    <div class="status" id="connectionStatus">● Connecting...</div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview" class="page active">
+    <div class="hero">
+        <div class="hero-content">
+            <h1>Smart Mutual Fund Analytics</h1>
+            <p>Explore mutual fund performance, understand investment
+            risks, analyze market trends and discover insights through
+            data analytics and machine learning.</p>
+            <br>
+            <button class="btn" onclick="showPage('explorer')">Explore Funds →</button>
+        </div>
+        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=900"
+             alt="Financial analytics dashboard">
+    </div>
+
+    <h3 class="section-title">Project Overview</h3>
+    <div class="cards">
+        <div class="card">
+            <div class="card-label">Mutual Fund Schemes</div>
+            <h2 id="totalSchemes">--</h2>
+            <small>Records in selected dataset</small>
+        </div>
+        <div class="card">
+            <div class="card-label">Fund Houses</div>
+            <h2 id="totalHouses">--</h2>
+            <small>Unique fund houses</small>
+        </div>
+        <div class="card">
+            <div class="card-label">Fund Categories</div>
+            <h2 id="totalCategories">--</h2>
+            <small>Unique categories</small>
+        </div>
+        <div class="card">
+            <div class="card-label">Dataset Columns</div>
+            <h2 id="totalColumns">--</h2>
+            <small>Available fields</small>
+        </div>
+    </div>
+
+    <h3 class="section-title">Dataset Analytics</h3>
+    <div class="chart-grid">
+        <div class="chart-box">
+            <h3>Category Distribution</h3>
+            <canvas id="categoryChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Risk Distribution</h3>
+            <canvas id="riskChart"></canvas>
+        </div>
+    </div>
+    <div id="overviewMessage" class="insight">
+        Dashboard statistics are loaded from the selected scheme dataset.
+    </div>
+</section>
+
+<!-- FUND EXPLORER -->
+<section id="explorer" class="page">
+    <h2 class="section-title">Fund Explorer</h2>
+    <p class="muted">Search and filter the actual mutual fund records loaded by the backend.</p>
+
+    <div class="toolbar">
+        <input id="searchInput" placeholder="🔍 Search fund, scheme or keyword...">
+        <select id="categoryFilter"><option value="">All Categories</option></select>
+        <select id="houseFilter"><option value="">All Fund Houses</option></select>
+        <select id="riskFilter"><option value="">All Risk Levels</option></select>
+    </div>
+
+    <div class="toolbar">
+        <select id="sortFilter"><option value="">Sort by...</option></select>
+        <select id="orderFilter">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+        </select>
+        <button class="btn" onclick="resetFilters()">Reset Filters</button>
+    </div>
+
+    <p id="fundCount" class="muted">Loading funds...</p>
+    <div id="fundError"></div>
+    <div class="table-wrap">
+        <table>
+            <thead id="fundHead"></thead>
+            <tbody id="fundBody">
+                <tr><td>Loading data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination">
+        <span id="pageInfo" class="muted">Page 1</span>
+        <div>
+            <button id="prevBtn" onclick="changePage(-1)">← Previous</button>
+            <button id="nextBtn" onclick="changePage(1)">Next →</button>
+        </div>
+    </div>
+</section>
+
+<!-- RETURNS -->
+<section id="returns" class="page">
+    <h2 class="section-title">Returns Analysis</h2>
+    <div class="insight">
+        Historical returns can be compared using the available return-related
+        columns in the selected dataset. Past performance does not guarantee future returns.
+    </div>
+    <div class="panel">
+        <h3>Choose Return Metric</h3>
+        <select id="returnMetric" style="max-width:350px;margin:15px 0"
+                onchange="loadReturnChart()">
+            <option value="">Detecting available metrics...</option>
+        </select>
+        <div style="height:340px"><canvas id="returnChart"></canvas></div>
+        <p id="returnMessage" class="muted"></p>
+    </div>
+</section>
+
+<!-- RISK -->
+<section id="risk" class="page">
+    <h2 class="section-title">Risk Analysis</h2>
+    <div class="chart-grid">
+        <div class="chart-box">
+            <h3>Risk Level Distribution</h3>
+            <canvas id="riskPageChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Risk Analysis</h3>
+            <div class="insight">Risk categories help understand the relative risk classification of schemes.</div>
+            <div class="insight">Historical risk measures do not guarantee future performance.</div>
+        </div>
+    </div>
+</section>
+<div class="nav-item" onclick="showPage('nav',this)">📉 NAV Analysis</div>
+
+<!-- NAV ANALYSIS -->
+<section id="nav" class="page">
+    <h2 class="section-title">NAV Analysis</h2>
+
+    <div class="insight">
+        Explore historical Net Asset Value (NAV) trends of six selected
+        mutual fund schemes. Select a fund and date range to analyze
+        its historical movement.
+    </div>
+
+    <div class="panel" style="margin-top:18px">
+
+        <h3>Select Mutual Fund</h3>
+
+        <div class="toolbar" style="grid-template-columns:repeat(3,1fr)">
+            <select id="navFund">
+                <option value="">Loading funds...</option>
+            </select>
+
+            <input type="date" id="navStartDate">
+            <input type="date" id="navEndDate">
+        </div>
+
+        <button class="btn" onclick="loadNavAnalysis()">
+            Analyze NAV
+        </button>
+
+        <p id="navMessage" class="muted" style="margin-top:15px">
+            Select a fund to view its NAV history.
+        </p>
+
+        <div class="cards" style="margin-top:20px">
+            <div class="card">
+                <div class="card-label">First NAV</div>
+                <h2 id="navFirst">--</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-label">Latest NAV</div>
+                <h2 id="navLatest">--</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-label">NAV Change (%)</div>
+                <h2 id="navChange">--</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-label">Total Records</div>
+                <h2 id="navRecords">--</h2>
+            </div>
+        </div>
+
+        <div style="height:380px;margin-top:25px">
+            <canvas id="navChart"></canvas>
+        </div>
+
+        <h3 style="margin:25px 0 15px">NAV History Records</h3>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>NAV Value</th>
+                    </tr>
+                </thead>
+                <tbody id="navTableBody">
+                    <tr><td colspan="2">Select a fund first.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</section>
+
+<!-- ML PREDICTION -->
+<section id="prediction" class="page">
+    <h2 class="section-title">ML Risk Prediction</h2>
+    <p class="muted">Enter fund characteristics to request a prediction from the saved classification model.</p>
+
+    <div class="panel" style="margin-top:18px">
+        <div class="form-grid">
+            <div class="field"><label>Beta</label><input id="beta" type="number" step="any" value="1"></div>
+            <div class="field"><label>Sharpe Ratio</label><input id="sharpe_ratio" type="number" step="any" value="0.5"></div>
+            <div class="field"><label>Sortino Ratio</label><input id="sortino_ratio" type="number" step="any" value="0.7"></div>
+            <div class="field"><label>Annualized Standard Deviation (%)</label><input id="std_dev_ann_pct" type="number" step="any" value="15"></div>
+            <div class="field"><label>Maximum Drawdown (%)</label><input id="max_drawdown_pct" type="number" step="any" value="-20"></div>
+            <div class="field"><label>AUM (Crore)</label><input id="aum_crore" type="number" min="0" value="1000"></div>
+            <div class="field"><label>Expense Ratio (%)</label><input id="expense_ratio_pct" type="number" min="0" step="any" value="1"></div>
+            <div class="field"><label>Morningstar Rating</label><input id="morningstar_rating" type="number" min="1" max="5" value="4"></div>
+            <div class="field"><label>Category</label><input id="category" value="Equity"></div>
+            <div class="field"><label>Plan</label>
+                <select id="plan"><option>Direct</option><option>Regular</option></select>
+            </div>
+            <div class="field"><label>Fund House</label><input id="fund_house" value="Other"></div>
+        </div>
+        <button class="btn" onclick="predictRisk()">Predict Risk</button>
+        <div id="predictionResult" class="result"></div>
+    </div>
+    <p class="muted" style="margin-top:12px">Educational model output only. This is not investment advice.</p>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="page">
+    <h2 class="section-title">About MF Intelligence</h2>
+    <div class="panel">
+        <h3>Project Objective</h3>
+        <p style="line-height:1.8;margin:12px 0;color:#607a69">
+            Mutual Fund Intelligence is a data analytics and machine learning
+            project designed to study mutual fund performance, investment risk,
+            NAV trends, SIP inflows, investor behaviour and portfolio holdings.
+        </p>
+        <h3 style="margin:22px 0 12px">Technologies Used</h3>
+        <div class="insight">Python, Pandas and NumPy</div>
+        <div class="insight">Matplotlib and Chart.js</div>
+        <div class="insight">Scikit-learn and Joblib</div>
+        <div class="insight">FastAPI and HTML/CSS/JavaScript</div>
+        <div class="insight">Docker for application containerization</div>
+        <h3 style="margin:22px 0 12px">Developed By</h3>
+        <div class="insight"><strong>Srishti Goyal</strong><br>B.Tech CSE (AIML)</div>
+        <div class="insight"><strong>Sonika Gupta</strong><br>B.Tech CSE (AIML)</div>
+    </div>
+</section>
+
+</main>
+</div>
+
+<script>
+
+const API = "";
+let currentPage = 1;
+const pageSize = 50;
+let totalPages = 1;
+let categoryChart, riskChart, returnChart, riskPageChart, navChart = null;
+let currentRows = [];
+let currentColumns = [];
+
+function showPage(id, element) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+    if (element) element.classList.add("active");
+    else {
+        const names = {overview:"Overview", explorer:"Fund Explorer",
+            returns:"Returns Analysis", risk:"Risk Analysis",
+            prediction:"ML Prediction", about:"About Project"};
+        document.querySelectorAll(".nav-item").forEach(n => {
+            if (n.textContent.includes(names[id])) n.classList.add("active");
+        });
+    }
+    if (id === "explorer") loadFunds();
+    if (id === "returns") loadReturnChart();
+}
+
+async function apiGet(url) {
+    const response = await fetch(API + url);
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+}
+
+async function checkHealth() {
+    try {
+        await apiGet("/api/health");
+        document.getElementById("connectionStatus").textContent = "● Backend Connected";
+    } catch (e) {
+        document.getElementById("connectionStatus").textContent = "● Backend Error";
+    }
+}
+
+async function loadOverview() {
+    try {
+        const data = await apiGet("/api/overview");
+        if (!data.available) {
+            document.getElementById("overviewMessage").textContent = data.message;
+            return;
+        }
+        document.getElementById("totalSchemes").textContent = data.total_schemes ?? "--";
+        document.getElementById("totalHouses").textContent = data.fund_houses ?? "--";
+        document.getElementById("totalCategories").textContent = data.categories ?? "--";
+        document.getElementById("totalColumns").textContent = data.columns?.length ?? "--";
+        document.getElementById("overviewMessage").textContent =
+            "Statistics are based on " + data.total_schemes +
+            " records from the selected scheme dataset.";
+        await loadFilterOptions();
+        await loadDistributionCharts();
+        detectReturnMetrics();
+    } catch (e) {
+        document.getElementById("overviewMessage").textContent =
+            "Could not load overview: " + e.message;
+    }
+}
+
+async function loadFilterOptions() {
+    const data = await apiGet("/api/funds/filters");
+    fillSelect("categoryFilter", data.categories, "All Categories");
+    fillSelect("houseFilter", data.fund_houses, "All Fund Houses");
+    fillSelect("riskFilter", data.risk_levels, "All Risk Levels");
+}
+
+function fillSelect(id, values, label) {
+    const select = document.getElementById(id);
+    select.innerHTML = `<option value="">${label}</option>`;
+    (values || []).forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+    });
+}
+
+async function loadDistributionCharts() {
+    const data = await apiGet("/api/funds?limit=300&page=1");
+    const rows = data.rows || [];
+    if (!rows.length) return;
+
+    const categoryCol = findKey(rows[0], ["category","scheme_category"]);
+    const riskCol = findKey(rows[0], ["risk_grade", "risk_level", "risk", "risk_category"]);
+    if (categoryCol) {
+        const counts = countValues(rows, categoryCol);
+        categoryChart = drawChart(categoryChart, "categoryChart", "doughnut",
+            counts.labels, counts.values);
+    }
+
+    if (riskCol) {
+        const counts = countValues(rows, riskCol);
+        riskChart = drawChart(riskChart, "riskChart", "doughnut",
+            counts.labels, counts.values);
+        riskPageChart = drawChart(riskPageChart, "riskPageChart", "pie",
+            counts.labels, counts.values);
+    }
+}
+
+function findKey(row, candidates) {
+    const keys = Object.keys(row);
+    return keys.find(k => candidates.includes(k.toLowerCase())) || null;
+}
+
+function countValues(rows, key) {
+    const counts = {};
+    rows.forEach(row => {
+        const value = row[key] ?? "Unknown";
+        counts[value] = (counts[value] || 0) + 1;
+    });
+    return {labels:Object.keys(counts), values:Object.values(counts)};
+}
+
+function drawChart(existing, id, type, labels, values) {
+    if (existing) existing.destroy();
+    return new Chart(document.getElementById(id), {
+        type,
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: [
+                    "#087443","#8bc9a5","#b7e4c7","#f2bd65",
+                    "#3a8d69","#a6cbb4","#6aab89","#d7eadd"
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive:true,
+            maintainAspectRatio:true,
+            plugins:{legend:{position:"bottom"}}
+        }
+    });
+}
+
+async function loadFunds() {
+    const search = document.getElementById("searchInput").value.trim();
+    const category = document.getElementById("categoryFilter").value;
+    const house = document.getElementById("houseFilter").value;
+    const risk = document.getElementById("riskFilter").value;
+    const sort = document.getElementById("sortFilter").value;
+    const order = document.getElementById("orderFilter").value;
+
+    const params = new URLSearchParams({
+        search, category, fund_house:house, risk,
+        sort_by:sort, order, page:currentPage, limit:pageSize
+    });
+
+    document.getElementById("fundError").innerHTML = "";
+    document.getElementById("fundBody").innerHTML =
+        '<tr><td colspan="10">Loading...</td></tr>';
+
+    try {
+        const data = await apiGet("/api/funds?" + params.toString());
+        currentRows = data.rows || [];
+        currentColumns = data.columns || [];
+        totalPages = Math.max(data.total_pages || 1, 1);
+
+        document.getElementById("fundCount").textContent =
+            `Showing ${currentRows.length} records on this page | ${data.total} matching records`;
+
+        document.getElementById("pageInfo").textContent =
+            `Page ${currentPage} of ${totalPages}`;
+
+        document.getElementById("prevBtn").disabled = currentPage <= 1;
+        document.getElementById("nextBtn").disabled = currentPage >= totalPages;
+
+        renderFundTable();
+        updateSortOptions();
+    } catch (e) {
+        document.getElementById("fundError").innerHTML =
+            `<div class="error">Unable to load funds: ${escapeHtml(e.message)}</div>`;
+        document.getElementById("fundBody").innerHTML = "";
+    }
+}
+
+function renderFundTable() {
+    const head = document.getElementById("fundHead");
+    const body = document.getElementById("fundBody");
+
+    head.innerHTML = "<tr>" + currentColumns.map(c =>
+        `<th>${escapeHtml(c)}</th>`).join("") + "</tr>";
+
+    if (!currentRows.length) {
+        body.innerHTML = `<tr><td colspan="${Math.max(currentColumns.length,1)}">No matching records found.</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = currentRows.map(row =>
+        "<tr>" + currentColumns.map(col =>
+            `<td>${escapeHtml(formatValue(row[col]))}</td>`
+        ).join("") + "</tr>"
+    ).join("");
+}
+
+function formatValue(value) {
+    if (value === null || value === undefined) return "—";
+    if (typeof value === "number") return Number(value.toFixed(3)).toString();
+    return String(value);
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    })[char]);
+}
+
+function updateSortOptions() {
+    const select = document.getElementById("sortFilter");
+    const old = select.value;
+    select.innerHTML = '<option value="">Sort by...</option>';
+    currentColumns.forEach(col => {
+        const option = document.createElement("option");
+        option.value = col;
+        option.textContent = col;
+        select.appendChild(option);
+    });
+    if (currentColumns.includes(old)) select.value = old;
+}
+
+function changePage(direction) {
+    currentPage += direction;
+    loadFunds();
+}
+
+function resetFilters() {
+    ["searchInput","categoryFilter","houseFilter","riskFilter","sortFilter"]
+        .forEach(id => document.getElementById(id).value = "");
+    document.getElementById("orderFilter").value = "desc";
+    currentPage = 1;
+    loadFunds();
+}
+
+let searchTimer;
+document.getElementById("searchInput").addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        currentPage = 1;
+        loadFunds();
+    }, 350);
+});
+
+["categoryFilter","houseFilter","riskFilter","sortFilter","orderFilter"]
+.forEach(id => document.getElementById(id).addEventListener("change", () => {
+    currentPage = 1;
+    loadFunds();
+}));
+
+function detectReturnMetrics() {
+    apiGet("/api/funds?limit=300&page=1").then(data => {
+        if (!data.rows?.length) return;
+        const keys = data.columns || [];
+        const metrics = keys.filter(k =>
+            /return|cagr|performance|growth/i.test(k)
+        );
+        const select = document.getElementById("returnMetric");
+        select.innerHTML = "";
+        if (!metrics.length) {
+            select.innerHTML = '<option value="">No return metric found in this dataset</option>';
+            document.getElementById("returnMessage").textContent =
+                "Try selecting the scheme performance dataset as the backend data source.";
+            return;
+        }
+        metrics.forEach(metric => {
+            const option = document.createElement("option");
+            option.value = metric;
+            option.textContent = metric;
+            select.appendChild(option);
+        });
+        loadReturnChart();
+    }).catch(() => {});
+}
+
+async function loadReturnChart() {
+    const metric = document.getElementById("returnMetric").value;
+    if (!metric) return;
+
+    try {
+        const data = await apiGet("/api/funds?limit=300&page=1");
+        const rows = data.rows || [];
+        const nameKey = findKey(rows[0] || {}, ["scheme_name","fund_name","scheme"]);
+        const points = rows.map(row => ({
+            name: nameKey ? row[nameKey] : "Scheme",
+            value: Number(row[metric])
+        })).filter(x => Number.isFinite(x.value));
+
+        points.sort((a,b) => b.value-a.value);
+        const top = points.slice(0,15);
+
+        if (!top.length) {
+            document.getElementById("returnMessage").textContent =
+                "No numeric values are available for this metric.";
+            return;
+        }
+
+        if (returnChart) returnChart.destroy();
+        returnChart = new Chart(document.getElementById("returnChart"), {
+            type:"bar",
+            data:{
+                labels:top.map(x => x.name),
+                datasets:[{
+                    label:metric,
+                    data:top.map(x => x.value),
+                    backgroundColor:"#15965b",
+                    borderRadius:6
+                }]
+            },
+            options:{
+                indexAxis:"y",
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{legend:{display:false}}
+            }
+        });
+        document.getElementById("returnMessage").textContent =
+            "Showing up to 15 schemes with the highest available values for " + metric + ".";
+    } catch(e) {
+        document.getElementById("returnMessage").textContent = e.message;
+    }
+}
+
+async function predictRisk() {
+    const result = document.getElementById("predictionResult");
+    result.style.display = "block";
+    result.textContent = "Generating prediction...";
+
+    const numericFields = [
+        "beta","sharpe_ratio","sortino_ratio","std_dev_ann_pct",
+        "max_drawdown_pct","aum_crore","expense_ratio_pct",
+        "morningstar_rating"
+    ];
+
+    const payload = {};
+    numericFields.forEach(id => {
+        payload[id] = Number(document.getElementById(id).value);
+    });
+
+    payload.category = document.getElementById("category").value;
+    payload.plan = document.getElementById("plan").value;
+    payload.fund_house = document.getElementById("fund_house").value;
+
+    if (Object.values(payload).some(v =>
+        typeof v === "number" && !Number.isFinite(v))) {
+        result.innerHTML = '<span style="color:#b42318">Please enter valid numeric values.</span>';
+        return;
+    }
+
+    try {
+        const response = await fetch(API + "/api/predict-risk", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.detail || "Prediction failed");
+
+        const label = Number(data.predicted_class) === 0
+            ? "Lower Risk (Class 0)"
+            : "Higher Risk (Class 1)";
+
+        let probabilityText = "";
+        if (data.probabilities) {
+            probabilityText = Object.entries(data.probabilities)
+                .map(([key,value]) =>
+                    `<div>Class ${escapeHtml(key)} probability: ${(value*100).toFixed(2)}%</div>`
+                ).join("");
+        }
+
+        result.innerHTML =
+            `<h3>Prediction Result</h3>
+             <strong>${label}</strong>
+             ${probabilityText}
+             <p class="muted">${escapeHtml(data.message || "")}</p>`;
+    } catch(e) {
+        result.innerHTML =
+            `<span style="color:#b42318">Prediction error: ${escapeHtml(e.message)}</span>`;
+    }
+}
+checkHealth();
+loadOverview();
+loadNavOptions();
+async function loadNavOptions() {
+    const dropdown = document.getElementById("navFund");
+
+    try {
+        const response = await fetch("/api/nav/options");
+        const data = await response.json();
+
+        dropdown.innerHTML = "";
+
+        data.funds.forEach(fund => {
+            const option = document.createElement("option");
+            option.value = fund;
+            option.textContent = fund;
+            dropdown.appendChild(option);
+        });
+
+        if (data.funds.length > 0) {
+            loadNavAnalysis();
+        }
+    } catch (error) {
+        console.error("NAV options error:", error);
+    }
+}
+
+async function loadNavAnalysis() {
+    const fund = document.getElementById("navFund").value;
+    const start = document.getElementById("navStartDate").value;
+    const end = document.getElementById("navEndDate").value;
+
+    if (!fund) return;
+
+    const params = new URLSearchParams({ fund });
+
+    if (start) params.append("start_date", start);
+    if (end) params.append("end_date", end);
+
+    try {
+        const response = await fetch(`/api/nav/data?${params}`);
+        const data = await response.json();
+
+        document.getElementById("navRecords").textContent = data.total_records;
+        document.getElementById("navFirst").textContent = data.first_nav ?? "-";
+        document.getElementById("navLatest").textContent = data.latest_nav ?? "-";
+        document.getElementById("navChange").textContent =
+            data.change_pct !== null ? data.change_pct + "%" : "-";
+
+        if (navChart) navChart.destroy();
+
+        const canvas = document.getElementById("navChart");
+
+        if (!canvas) {
+            throw new Error("NAV chart canvas not found");
+}
+
+const ctx = canvas.getContext("2d");
+
+        navChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: data.records.map(row => row.date),
+                datasets: [{
+                    label: "NAV",
+                    data: data.records.map(row => row.nav),
+                    borderColor: "#3b82f6",
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    } catch (error) {
+        console.error("NAV analysis error:", error);
+    }
+}
+</script>
+</body>
+</html>
